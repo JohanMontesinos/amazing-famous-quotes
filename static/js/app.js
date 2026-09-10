@@ -42,9 +42,10 @@
     btnRoll: document.getElementById('btn-roll'),
     btnCopyFeatured: document.getElementById('btn-copy-featured'),
     
-    // Header Stats
+    // Header Stats & Controls
     statsBadge: document.getElementById('stats-badge'),
     categoryCountBadge: document.getElementById('category-count-badge'),
+    themeToggle: document.getElementById('theme-toggle'),
 
     // Search & Filter
     searchInput: document.getElementById('search-input'),
@@ -64,6 +65,39 @@
     toast: document.getElementById('toast'),
     toastMessage: document.getElementById('toast-message'),
   };
+
+  // --- Theme Management ---
+  function getPreferredTheme() {
+    try {
+      const saved = localStorage.getItem('theme');
+      if (saved === 'light' || saved === 'dark') return saved;
+    } catch (e) {
+      // Ignore if localStorage unavailable
+    }
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+      return 'light';
+    }
+    return 'dark';
+  }
+
+  function applyTheme(theme) {
+    if (theme === 'light') {
+      document.documentElement.setAttribute('data-theme', 'light');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+    }
+    try {
+      localStorage.setItem('theme', theme);
+    } catch (e) {
+      // Ignore if localStorage unavailable
+    }
+  }
+
+  function toggleTheme() {
+    const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+    const nextTheme = isLight ? 'dark' : 'light';
+    applyTheme(nextTheme);
+  }
 
   // --- Toast Notification ---
   let toastTimeout = null;
@@ -405,10 +439,16 @@
     // Reset Filters Buttons
     el.btnResetFilters.addEventListener('click', resetAllFilters);
     el.btnEmptyReset.addEventListener('click', resetAllFilters);
+
+    // Theme Toggle Switch
+    if (el.themeToggle) {
+      el.themeToggle.addEventListener('click', toggleTheme);
+    }
   }
 
   // --- Initialization ---
   async function init() {
+    applyTheme(getPreferredTheme());
     initEventListeners();
     await Promise.all([
       fetchCategories(),
