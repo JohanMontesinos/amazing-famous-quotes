@@ -23,15 +23,22 @@ We have implemented a responsive web application that curates and displays 100 w
   - `GET /api/categories`: Returns all categories and quote counts.
   - `GET /api/authors`: Returns all unique authors and quote counts.
 
-### Vanilla Frontend
-- **HTML**: [`templates/index.html`](file:///Users/cryptoyorkie/agy-cli-projects/famous-quotes/templates/index.html) with semantic structure for hero quote, filter toolbar, category chips, and catalog grid.
-- **CSS**: [`static/css/style.css`](file:///Users/cryptoyorkie/agy-cli-projects/famous-quotes/static/css/style.css) featuring a modern dark-palette aesthetic, custom category tag styling, card hover effects, and responsive breakpoints.
-- **JavaScript**: [`static/js/app.js`](file:///Users/cryptoyorkie/agy-cli-projects/famous-quotes/static/js/app.js) with plain vanilla JavaScript:
-  - "🎲 Roll New Quote" with smooth transition.
-  - Debounced real-time search across text, authors, and categories.
-  - Filter chips and select dropdowns.
-  - One-click copy with toast notification.
-  - Click-to-filter on author names and category badges directly from cards.
+### Vanilla Frontend & Major UX Enhancements
+- **HTML**: [`templates/index.html`](file:///Users/cryptoyorkie/agy-cli-projects/famous-quotes/templates/index.html) semantic layout.
+- **CSS**: [`static/css/style.css`](file:///Users/cryptoyorkie/agy-cli-projects/famous-quotes/static/css/style.css) featuring:
+  - **Dark / Light Mode Toggle**: Smooth switch overriding CSS `:root` variables (`--bg-main`, `--text-primary`, `--accent-primary`, etc.) with preference persistence in `localStorage`.
+  - **Dynamic Card Styling**: Category-specific color accents and hover transitions.
+  - **Search Highlighting (`<mark class="highlight">`)**: Matched keywords pop out visibly.
+  - **Floating "Back to Top" Button**: Appears smoothly after scrolling down > 350px.
+- **JavaScript**: [`static/js/app.js`](file:///Users/cryptoyorkie/agy-cli-projects/famous-quotes/static/js/app.js):
+  - **Favorites System**: Save/remove quotes to personal collection via heart icons (♡ / ♥) stored in `localStorage`, plus a dedicated `♥ Favorites` filter tab and counter badge.
+  - **Keyboard Shortcuts**:
+    - <kbd>Space</kbd> or <kbd>R</kbd>: Roll a new quote instantly.
+    - <kbd>/</kbd>: Jump directly to search input.
+    - <kbd>Esc</kbd>: Clear search, dismiss alerts, or blur inputs.
+  - **Interactive Empty State**: Popular topic suggestion chips (*Einstein*, *Courage*, *Technology*, *Dream*, *Truth*) to jump-start searches when zero results match.
+  - **Dice Roll Animation**: Spinning 3D rotation on random roll.
+  - **Accessibility**: `aria-live="polite"` screen reader announcements and `:focus-visible` navigation outlines.
 
 ---
 
@@ -63,7 +70,7 @@ tests/test_app.py::test_search_quotes_by_category PASSED                 [ 81%]
 tests/test_app.py::test_get_categories_endpoint PASSED                   [ 90%]
 tests/test_app.py::test_get_authors_endpoint PASSED                      [100%]
 
-============================== 11 passed in 0.40s ==============================
+============================== 11 passed in 0.08s ==============================
 ```
 
 ---
