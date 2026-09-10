@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wisdom Deck &mdash; 100 Famous Quotes</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="header-content">
+        <div class="brand">
+          <div class="brand-icon">❝</div>
+          <div>
+            <h1>Wisdom Deck</h1>
+            <p class="subtitle">A curated compendium of 100 timeless quotes</p>
+          </div>
+        </div>
+        <div class="header-badges">
+          <span class="badge" id="stats-badge">100 Quotes</span>
+          <span class="badge badge-accent" id="category-count-badge">7 Categories</span>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <!-- Hero: Random Quote Display -->
+      <section class="hero-section">
+        <div class="section-label">
+          <span>Quote of the Moment</span>
+          <div class="random-filter-wrapper">
+            <label for="random-cat-select">Category:</label>
+            <select id="random-cat-select" class="inline-select">
+              <option value="">Any Category</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="featured-card" id="featured-card">
+          <div class="quote-mark">“</div>
+          <div class="quote-content-wrapper">
+            <blockquote id="featured-quote-text" class="quote-text">
+              Loading an inspiring quote...
+            </blockquote>
+            <div class="quote-meta">
+              <cite id="featured-quote-author" class="quote-author">&mdash;</cite>
+              <span id="featured-quote-category" class="category-pill">&mdash;</span>
+            </div>
+          </div>
+          <div class="featured-actions">
+            <button id="btn-roll" class="btn btn-primary" title="Get another random quote">
+              <span class="btn-icon">🎲</span> Roll New Quote
+            </button>
+            <button id="btn-copy-featured" class="btn btn-secondary" title="Copy quote to clipboard">
+              <span class="btn-icon">📋</span> Copy
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Search & Filter Controls -->
+      <section class="search-section">
+        <div class="search-header">
+          <h2>Search & Browse Catalog</h2>
+          <span id="results-count" class="results-count">Showing 100 quotes</span>
+        </div>
+
+        <div class="controls-card">
+          <div class="search-input-group">
+            <span class="search-icon">🔍</span>
+            <input 
+              type="text" 
+              id="search-input" 
+              placeholder="Search quotes by keyword, author, or idea..." 
+              autocomplete="off"
+            >
+            <button id="btn-clear-search" class="clear-btn" aria-label="Clear search" title="Clear">✕</button>
+          </div>
+
+          <div class="filters-row">
+            <div class="filter-group">
+              <label for="filter-category">Category</label>
+              <select id="filter-category" class="filter-select">
+                <option value="">All Categories</option>
+              </select>
+            </div>
+
+            <div class="filter-group">
+              <label for="filter-author">Author</label>
+              <select id="filter-author" class="filter-select">
+                <option value="">All Authors</option>
+              </select>
+            </div>
+
+            <div class="filter-group reset-group">
+              <label>&nbsp;</label>
+              <button id="btn-reset-filters" class="btn btn-text">Reset Filters</button>
+            </div>
+          </div>
+
+          <!-- Quick Category Tags -->
+          <div class="category-chips-container" id="category-chips">
+            <!-- Chips rendered dynamically -->
+          </div>
+        </div>
+      </section>
+
+      <!-- Quotes Catalog Grid -->
+      <section class="catalog-section">
+        <div id="quotes-grid" class="quotes-grid">
+          <!-- Cards populated by JavaScript -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="empty-state" class="empty-state hidden">
+          <div class="empty-icon">🔎</div>
+          <h3>No quotes found</h3>
+          <p>Try adjusting your search terms or clearing your filters.</p>
+          <button id="btn-empty-reset" class="btn btn-secondary">Clear All Filters</button>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <p>Built with <strong>Python Flask</strong> &bull; Managed with <strong>uv</strong> &bull; Plain Vanilla <strong>HTML / CSS / JS</strong></p>
+    </footer>
+
+    <!-- Toast Notification for Copy -->
+    <div id="toast" class="toast hidden">
+      <span class="toast-icon">✓</span>
+      <span id="toast-message">Quote copied to clipboard!</span>
+    </div>
+  </div>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
