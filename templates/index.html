@@ -25,6 +25,9 @@
           <div class="header-badges">
             <span class="badge" id="stats-badge">100 Quotes</span>
             <span class="badge badge-accent" id="category-count-badge">7 Categories</span>
+            <button id="btn-favorites-toggle" class="badge badge-fav" title="Filter by saved favorites">
+              <span class="fav-icon">♥</span> Favorites (<span id="favorites-count">0</span>)
+            </button>
           </div>
           <button id="theme-toggle" class="theme-toggle-btn" aria-label="Toggle light/dark theme" title="Toggle light/dark mode">
             <span class="theme-toggle-track">
@@ -42,7 +45,10 @@
       <!-- Hero: Random Quote Display -->
       <section class="hero-section">
         <div class="section-label">
-          <span>Quote of the Moment</span>
+          <div class="section-title-wrap">
+            <span>Quote of the Moment</span>
+            <span class="kbd-hint"><kbd>Space</kbd> or <kbd>R</kbd> to roll</span>
+          </div>
           <div class="random-filter-wrapper">
             <label for="random-cat-select">Category:</label>
             <select id="random-cat-select" class="inline-select">
@@ -54,7 +60,7 @@
         <div class="featured-card" id="featured-card">
           <div class="quote-mark">“</div>
           <div class="quote-content-wrapper">
-            <blockquote id="featured-quote-text" class="quote-text">
+            <blockquote id="featured-quote-text" class="quote-text" aria-live="polite">
               Loading an inspiring quote...
             </blockquote>
             <div class="quote-meta">
@@ -63,8 +69,11 @@
             </div>
           </div>
           <div class="featured-actions">
-            <button id="btn-roll" class="btn btn-primary" title="Get another random quote">
-              <span class="btn-icon">🎲</span> Roll New Quote
+            <button id="btn-roll" class="btn btn-primary" title="Get another random quote (Press Space or R)">
+              <span class="btn-icon dice-icon">🎲</span> Roll New Quote
+            </button>
+            <button id="btn-favorite-featured" class="btn btn-secondary btn-fav-hero" title="Save to favorites">
+              <span class="fav-icon-hero">♡</span> Favorite
             </button>
             <button id="btn-copy-featured" class="btn btn-secondary" title="Copy quote to clipboard">
               <span class="btn-icon">📋</span> Copy
@@ -89,6 +98,7 @@
               placeholder="Search quotes by keyword, author, or idea..." 
               autocomplete="off"
             >
+            <span class="search-kbd-hint"><kbd>/</kbd></span>
             <button id="btn-clear-search" class="clear-btn" aria-label="Clear search" title="Clear">✕</button>
           </div>
 
@@ -129,8 +139,20 @@
         <!-- Empty State -->
         <div id="empty-state" class="empty-state hidden">
           <div class="empty-icon">🔎</div>
-          <h3>No quotes found</h3>
-          <p>Try adjusting your search terms or clearing your filters.</p>
+          <h3 id="empty-title">No quotes found</h3>
+          <p id="empty-description">Try adjusting your search terms or clearing your filters.</p>
+          
+          <div id="empty-suggestions" class="empty-suggestions">
+            <p class="suggestions-label">Try searching for popular topics:</p>
+            <div class="suggestion-chips">
+              <button type="button" class="sug-chip" data-keyword="Einstein">Einstein</button>
+              <button type="button" class="sug-chip" data-keyword="Courage">Courage</button>
+              <button type="button" class="sug-chip" data-keyword="Technology">Technology</button>
+              <button type="button" class="sug-chip" data-keyword="Dream">Dream</button>
+              <button type="button" class="sug-chip" data-keyword="Truth">Truth</button>
+            </div>
+          </div>
+
           <button id="btn-empty-reset" class="btn btn-secondary">Clear All Filters</button>
         </div>
       </section>
@@ -141,11 +163,16 @@
       <p>Built with <strong>Python Flask</strong> &bull; Managed with <strong>uv</strong> &bull; Plain Vanilla <strong>HTML / CSS / JS</strong></p>
     </footer>
 
-    <!-- Toast Notification for Copy -->
-    <div id="toast" class="toast hidden">
+    <!-- Toast Notification for Copy & Actions -->
+    <div id="toast" class="toast hidden" role="status" aria-live="polite">
       <span class="toast-icon">✓</span>
       <span id="toast-message">Quote copied to clipboard!</span>
     </div>
+
+    <!-- Floating Back to Top Button -->
+    <button id="btn-back-to-top" class="back-to-top hidden" title="Back to top" aria-label="Back to top">
+      ↑ Top
+    </button>
   </div>
 
   <script src="/static/js/app.js"></script>

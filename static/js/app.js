@@ -10,6 +10,8 @@
     currentRandomQuote: null,
     categories: [],
     authors: [],
+    favorites: new Set(),
+    showOnlyFavorites: false,
     activeCategory: '',
     activeAuthor: '',
     searchQuery: '',
@@ -40,11 +42,14 @@
     featuredQuoteCategory: document.getElementById('featured-quote-category'),
     randomCatSelect: document.getElementById('random-cat-select'),
     btnRoll: document.getElementById('btn-roll'),
+    btnFavoriteFeatured: document.getElementById('btn-favorite-featured'),
     btnCopyFeatured: document.getElementById('btn-copy-featured'),
     
     // Header Stats & Controls
     statsBadge: document.getElementById('stats-badge'),
     categoryCountBadge: document.getElementById('category-count-badge'),
+    btnFavoritesToggle: document.getElementById('btn-favorites-toggle'),
+    favoritesCount: document.getElementById('favorites-count'),
     themeToggle: document.getElementById('theme-toggle'),
 
     // Search & Filter
@@ -59,7 +64,13 @@
     // Catalog
     quotesGrid: document.getElementById('quotes-grid'),
     emptyState: document.getElementById('empty-state'),
+    emptyTitle: document.getElementById('empty-title'),
+    emptyDescription: document.getElementById('empty-description'),
+    emptySuggestions: document.getElementById('empty-suggestions'),
     btnEmptyReset: document.getElementById('btn-empty-reset'),
+
+    // Floating Back to Top
+    btnBackToTop: document.getElementById('btn-back-to-top'),
 
     // Toast
     toast: document.getElementById('toast'),
@@ -99,6 +110,82 @@
     applyTheme(nextTheme);
   }
 
+  // --- Favorites Management ---
+  function loadFavorites() {
+    try {
+      const stored = localStorage.getItem('favorite_quotes');
+      if (stored) {
+        const ids = JSON.parse(stored);
+        if (Array.isArray(ids)) {
+          state.favorites = new Set(ids);
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to parse favorites from localStorage:', e);
+    }
+    updateFavoritesUI();
+  }
+
+  function saveFavorites() {
+    try {
+      localStorage.setItem('favorite_quotes', JSON.stringify(Array.from(state.favorites)));
+    } catch (e) {
+      console.warn('Failed to save favorites to localStorage:', e);
+    }
+    updateFavoritesUI();
+  }
+
+  function toggleFavorite(id) {
+    if (!id) return;
+    id = Number(id);
+    const isFav = state.favorites.has(id);
+    if (isFav) {
+      state.favorites.delete(id);
+      showToast('Removed from favorites');
+    } else {
+      state.favorites.add(id);
+      showToast('Added to favorites! ♥');
+    }
+    saveFavorites();
+
+    // Re-filter if viewing favorites catalog
+    if (state.showOnlyFavorites) {
+      fetchCatalogQuotes();
+    } else {
+      // Update individual card if in view
+      updateCardFavoriteButton(id);
+    }
+  }
+
+  function updateFavoritesUI() {
+    if (el.favoritesCount) {
+      el.favoritesCount.textContent = state.favorites.size;
+    }
+    if (el.btnFavoritesToggle) {
+      el.btnFavoritesToggle.classList.toggle('active', state.showOnlyFavorites);
+    }
+    updateHeroFavoriteButton();
+  }
+
+  function updateHeroFavoriteButton() {
+    if (!el.btnFavoriteFeatured || !state.currentRandomQuote) return;
+    const isFav = state.favorites.has(Number(state.currentRandomQuote.id));
+    el.btnFavoriteFeatured.classList.toggle('active', isFav);
+    el.btnFavoriteFeatured.innerHTML = isFav 
+      ? '<span class="fav-icon-hero">♥</span> Favorited'
+      : '<span class="fav-icon-hero">♡</span> Favorite';
+  }
+
+  function updateCardFavoriteButton(id) {
+    const btn = document.querySelector(`.btn-card-fav[data-id="${id}"]`);
+    if (btn) {
+      const isFav = state.favorites.has(Number(id));
+      btn.classList.toggle('active', isFav);
+      btn.innerHTML = isFav ? '♥' : '♡';
+      btn.title = isFav ? 'Remove from favorites' : 'Save to favorites';
+    }
+  }
+
   // --- Toast Notification ---
   let toastTimeout = null;
   function showToast(message) {
@@ -136,6 +223,15 @@
     }
   }
 
+  // --- Search Highlighting Helper ---
+  function highlightMatch(text, query) {
+    if (!query || !query.trim()) return escapeHtml(text);
+    const safeText = escapeHtml(text);
+    const escapedQuery = query.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`(${escapedQuery})`, 'gi');
+    return safeText.replace(regex, '<mark class="highlight">$1</mark>');
+  }
+
   // --- API Calls ---
 
   // 1. Fetch random quote
@@ -143,6 +239,13 @@
     try {
       el.btnRoll.disabled = true;
       el.featuredQuoteText.style.opacity = '0.4';
+
+      // Dice animation
+      const dice = el.btnRoll.querySelector('.dice-icon');
+      if (dice) {
+        dice.classList.add('rolling');
+        setTimeout(() => dice.classList.remove('rolling'), 500);
+      }
 
       let url = '/api/quotes/random';
       if (category) {
@@ -155,6 +258,7 @@
 
       state.currentRandomQuote = quote;
       renderFeaturedQuote(quote);
+      updateHeroFavoriteButton();
     } catch (err) {
       console.error(err);
       el.featuredQuoteText.textContent = 'Could not load quote. Please try again.';
@@ -219,19 +323,33 @@
 
     const allChip = document.createElement('button');
     allChip.type = 'button';
-    allChip.className = `chip ${state.activeCategory === '' ? 'active' : ''}`;
+    allChip.className = `chip ${state.activeCategory === '' && !state.showOnlyFavorites ? 'active' : ''}`;
     allChip.textContent = 'All Categories';
-    allChip.addEventListener('click', () => setCategoryFilter(''));
+    allChip.addEventListener('click', () => {
+      state.showOnlyFavorites = false;
+      setCategoryFilter('');
+    });
     el.categoryChips.appendChild(allChip);
 
     categories.forEach((cat) => {
       const chip = document.createElement('button');
       chip.type = 'button';
-      chip.className = `chip ${state.activeCategory.toLowerCase() === cat.name.toLowerCase() ? 'active' : ''}`;
+      chip.className = `chip ${state.activeCategory.toLowerCase() === cat.name.toLowerCase() && !state.showOnlyFavorites ? 'active' : ''}`;
       chip.textContent = `${cat.name}`;
-      chip.addEventListener('click', () => setCategoryFilter(cat.name));
+      chip.addEventListener('click', () => {
+        state.showOnlyFavorites = false;
+        setCategoryFilter(cat.name);
+      });
       el.categoryChips.appendChild(chip);
     });
+
+    // Add Favorites Chip
+    const favChip = document.createElement('button');
+    favChip.type = 'button';
+    favChip.className = `chip ${state.showOnlyFavorites ? 'active' : ''}`;
+    favChip.innerHTML = `♥ Favorites (${state.favorites.size})`;
+    favChip.addEventListener('click', toggleFavoritesFilter);
+    el.categoryChips.appendChild(favChip);
   }
 
   // 3. Fetch Authors
@@ -266,7 +384,12 @@
       if (!res.ok) throw new Error('Failed to load quotes');
       const data = await res.json();
 
-      renderCatalog(data.quotes, data.total);
+      let quotes = data.quotes;
+      if (state.showOnlyFavorites) {
+        quotes = quotes.filter((q) => state.favorites.has(Number(q.id)));
+      }
+
+      renderCatalog(quotes, data.total);
     } catch (err) {
       console.error(err);
     }
@@ -274,11 +397,22 @@
 
   // Render Catalog Grid
   function renderCatalog(quotes, totalCount) {
-    el.resultsCount.textContent = `Showing ${quotes.length} of ${totalCount || 100} quotes`;
+    const totalLabel = state.showOnlyFavorites ? `${quotes.length} favorites` : `${totalCount || 100} quotes`;
+    el.resultsCount.textContent = `Showing ${quotes.length} of ${totalLabel}`;
 
     if (!quotes || quotes.length === 0) {
       el.quotesGrid.innerHTML = '';
       el.emptyState.classList.remove('hidden');
+
+      if (state.showOnlyFavorites) {
+        el.emptyTitle.textContent = 'No favorite quotes yet';
+        el.emptyDescription.textContent = 'Click the heart icon (♡) on any quote to save it to your personal collection.';
+        if (el.emptySuggestions) el.emptySuggestions.classList.add('hidden');
+      } else {
+        el.emptyTitle.textContent = 'No quotes found';
+        el.emptyDescription.textContent = 'Try adjusting your search terms or clearing your filters.';
+        if (el.emptySuggestions) el.emptySuggestions.classList.remove('hidden');
+      }
       return;
     }
 
@@ -292,19 +426,28 @@
       card.className = 'quote-card';
 
       const catClass = getCategoryClass(q.category);
+      const isFav = state.favorites.has(Number(q.id));
+
+      const highlightedQuote = highlightMatch(q.quote, state.searchQuery);
+      const highlightedAuthor = highlightMatch(q.author, state.searchQuery);
 
       card.innerHTML = `
         <blockquote class="card-body">
-          "${escapeHtml(q.quote)}"
+          "${highlightedQuote}"
         </blockquote>
         <div class="card-footer">
           <div class="card-author-info">
-            <span class="card-author" title="Filter by ${escapeHtml(q.author)}">${escapeHtml(q.author)}</span>
+            <span class="card-author" title="Filter by ${escapeHtml(q.author)}">${highlightedAuthor}</span>
             <span class="category-pill ${catClass}" title="Filter by ${escapeHtml(q.category)}">${escapeHtml(q.category)}</span>
           </div>
-          <button type="button" class="btn-card-copy" title="Copy quote">
-            📋 Copy
-          </button>
+          <div class="card-actions">
+            <button type="button" class="btn-card-fav ${isFav ? 'active' : ''}" data-id="${q.id}" title="${isFav ? 'Remove from favorites' : 'Save to favorites'}">
+              ${isFav ? '♥' : '♡'}
+            </button>
+            <button type="button" class="btn-card-copy" title="Copy quote">
+              📋 Copy
+            </button>
+          </div>
         </div>
       `;
 
@@ -317,7 +460,14 @@
       // Category pill click -> filter by category
       const catSpan = card.querySelector('.category-pill');
       catSpan.addEventListener('click', () => {
+        state.showOnlyFavorites = false;
         setCategoryFilter(q.category);
+      });
+
+      // Favorite button
+      const favBtn = card.querySelector('.btn-card-fav');
+      favBtn.addEventListener('click', () => {
+        toggleFavorite(q.id);
       });
 
       // Copy button
@@ -358,18 +508,62 @@
     fetchCatalogQuotes();
   }
 
+  function toggleFavoritesFilter() {
+    state.showOnlyFavorites = !state.showOnlyFavorites;
+    updateFavoritesUI();
+    renderCategoryChips(state.categories);
+    fetchCatalogQuotes();
+  }
+
   function resetAllFilters() {
     state.searchQuery = '';
     state.activeCategory = '';
     state.activeAuthor = '';
+    state.showOnlyFavorites = false;
 
     el.searchInput.value = '';
     el.filterCategory.value = '';
     el.filterAuthor.value = '';
     el.btnClearSearch.classList.remove('visible');
 
+    updateFavoritesUI();
     renderCategoryChips(state.categories);
     fetchCatalogQuotes();
+  }
+
+  // --- Keyboard Shortcuts ---
+  function handleKeyDown(e) {
+    const tag = (document.activeElement && document.activeElement.tagName) || '';
+    const isInput = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+
+    // Press Escape to clear search or hide toast
+    if (e.key === 'Escape') {
+      if (el.searchInput.value) {
+        el.searchInput.value = '';
+        state.searchQuery = '';
+        el.btnClearSearch.classList.remove('visible');
+        fetchCatalogQuotes();
+      }
+      if (el.toast) el.toast.classList.add('hidden');
+      if (isInput) document.activeElement.blur();
+      return;
+    }
+
+    // Ignore other shortcuts when user is actively typing in a form field
+    if (isInput) return;
+
+    // Press '/' to search
+    if (e.key === '/') {
+      e.preventDefault();
+      el.searchInput.focus();
+      return;
+    }
+
+    // Press Space or 'R' / 'r' to roll a new quote
+    if (e.code === 'Space' || e.key === 'r' || e.key === 'R') {
+      e.preventDefault();
+      fetchRandomQuote(el.randomCatSelect.value);
+    }
   }
 
   // --- Event Listeners ---
@@ -379,6 +573,21 @@
       const selectedCat = el.randomCatSelect.value;
       fetchRandomQuote(selectedCat);
     });
+
+    // Hero Favorite Button
+    if (el.btnFavoriteFeatured) {
+      el.btnFavoriteFeatured.addEventListener('click', () => {
+        if (state.currentRandomQuote) {
+          toggleFavorite(state.currentRandomQuote.id);
+          updateHeroFavoriteButton();
+        }
+      });
+    }
+
+    // Favorites Header Toggle Badge
+    if (el.btnFavoritesToggle) {
+      el.btnFavoritesToggle.addEventListener('click', toggleFavoritesFilter);
+    }
 
     // Hero category dropdown change -> immediately roll a quote from that category
     el.randomCatSelect.addEventListener('change', (e) => {
@@ -395,6 +604,7 @@
     // Featured Category Pill Click -> filter catalog by category
     el.featuredQuoteCategory.addEventListener('click', () => {
       if (state.currentRandomQuote && state.currentRandomQuote.category) {
+        state.showOnlyFavorites = false;
         setCategoryFilter(state.currentRandomQuote.category);
         el.filterCategory.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
@@ -428,6 +638,7 @@
 
     // Filter Category Select Change
     el.filterCategory.addEventListener('change', (e) => {
+      state.showOnlyFavorites = false;
       setCategoryFilter(e.target.value);
     });
 
@@ -440,6 +651,38 @@
     el.btnResetFilters.addEventListener('click', resetAllFilters);
     el.btnEmptyReset.addEventListener('click', resetAllFilters);
 
+    // Empty State Suggestions Chips
+    const suggestionChips = document.querySelectorAll('.sug-chip');
+    suggestionChips.forEach((chip) => {
+      chip.addEventListener('click', () => {
+        const keyword = chip.dataset.keyword;
+        if (keyword) {
+          el.searchInput.value = keyword;
+          state.searchQuery = keyword;
+          el.btnClearSearch.classList.add('visible');
+          fetchCatalogQuotes();
+        }
+      });
+    });
+
+    // Floating Back to Top Button
+    if (el.btnBackToTop) {
+      window.addEventListener('scroll', () => {
+        if (window.scrollY > 350) {
+          el.btnBackToTop.classList.remove('hidden');
+        } else {
+          el.btnBackToTop.classList.add('hidden');
+        }
+      });
+
+      el.btnBackToTop.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    }
+
+    // Keyboard Shortcuts
+    window.addEventListener('keydown', handleKeyDown);
+
     // Theme Toggle Switch
     if (el.themeToggle) {
       el.themeToggle.addEventListener('click', toggleTheme);
@@ -449,6 +692,7 @@
   // --- Initialization ---
   async function init() {
     applyTheme(getPreferredTheme());
+    loadFavorites();
     initEventListeners();
     await Promise.all([
       fetchCategories(),

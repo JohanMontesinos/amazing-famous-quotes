@@ -30,13 +30,16 @@ def test_quotes_file_contains_exact_100_valid_quotes():
 
 
 def test_index_page(client):
-    """Verify that the home route serves the HTML page with all core controls."""
+    """Verify that the home route serves the HTML page with all core controls and UX enhancements."""
     res = client.get("/")
     assert res.status_code == 200
     assert b"Wisdom Deck" in res.data
     assert b"Quote of the Moment" in res.data
     assert b"search-input" in res.data
     assert b"theme-toggle" in res.data
+    assert b"btn-favorites-toggle" in res.data
+    assert b"btn-back-to-top" in res.data
+    assert b"empty-suggestions" in res.data
 
 
 def test_random_quote_endpoint(client):
